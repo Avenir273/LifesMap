@@ -1,0 +1,7 @@
+{
+  "name": "lifesmap",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "echo '这是一个纯静态网站，不需要构建～'"
+  }
+}
