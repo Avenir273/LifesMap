@@ -1,0 +1,503 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人生地图 - 修仙人生模拟器</title>
+<style>
+/* 修仙主题CSS */
+:root{--bg-deep:#0a0a14;--bg-panel:rgba(12,12,28,0.94);--bg-panel-light:rgba(18,18,38,0.88);--gold:#d4a574;--gold-light:#f0d9b5;--gold-dark:#b8863a;--jade:#5dbea3;--jade-light:#7ed8bf;--jade-dark:#3d8b7a;--text:#c4b998;--text-bright:#f0e6d3;--text-dim:#7a7260;--danger:#c0392b;--danger-light:#e74c3c;--rare:#9b59b6;--rare-light:#b07cd8;--border:rgba(212,165,116,0.25);--border-glow:rgba(212,165,116,0.5);--font-cn:'KaiTi','STKaiti','Microsoft YaHei','SimSun',serif;--font-title:'KaiTi','STKaiti','SimSun',serif}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;font-family:var(--font-cn);background:var(--bg-deep);color:var(--text);user-select:none}
+#bgCanvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
+#app{position:relative;z-index:1;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:rgba(0,0,0,.3)}::-webkit-scrollbar-thumb{background:var(--gold-dark);border-radius:3px}
+@keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeOut{from{opacity:1}to{opacity:0}}
+@keyframes glowPulse{0%,100%{text-shadow:0 0 10px rgba(212,165,116,.3)}50%{text-shadow:0 0 30px rgba(212,165,116,.7),0 0 60px rgba(212,165,116,.3)}}
+@keyframes floatAnim{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes slideInLeft{from{opacity:0;transform:translateX(-40px)}to{opacity:1;transform:translateX(0)}}
+@keyframes slideInRight{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+@keyframes breakthroughAnim{0%{filter:brightness(1);transform:scale(1)}30%{filter:brightness(2.5);transform:scale(1.05)}70%{filter:brightness(1.8);transform:scale(1.02)}100%{filter:brightness(1);transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+@keyframes sparkle{0%,100%{opacity:0;transform:scale(0) rotate(0)}50%{opacity:1;transform:scale(1) rotate(180deg)}}
+.fade-in{animation:fadeIn .4s ease forwards}.fade-in-up{animation:fadeInUp .6s ease forwards}
+.slide-in-left{animation:slideInLeft .5s ease forwards}.slide-in-right{animation:slideInRight .5s ease forwards}
+.glow-pulse{animation:glowPulse 3s ease-in-out infinite}.float-anim{animation:floatAnim 3s ease-in-out infinite}
+#homeScreen{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%}#homeScreen:not(.active){display:none}
+#homeScreen .game-title{font-family:var(--font-title);font-size:clamp(48px,8vw,96px);color:var(--gold-light);letter-spacing:.15em;animation:glowPulse 3s ease-in-out infinite,fadeIn 1.2s ease;margin-bottom:12px;text-shadow:0 0 40px rgba(212,165,116,.4),0 0 80px rgba(212,165,116,.2)}
+#homeScreen .game-subtitle{font-family:var(--font-title);font-size:clamp(18px,2.5vw,28px);color:var(--text);letter-spacing:.25em;animation:fadeIn 1.5s ease;margin-bottom:60px}
+#homeScreen .decoration-line{width:200px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:0 auto 30px;animation:fadeIn 2s ease}
+.btn-primary{font-family:var(--font-cn);font-size:22px;letter-spacing:.2em;color:var(--bg-deep);background:linear-gradient(135deg,var(--jade),var(--jade-dark));border:2px solid var(--jade-light);padding:16px 64px;border-radius:8px;cursor:pointer;transition:all .4s ease}
+.btn-primary:hover{background:linear-gradient(135deg,var(--jade-light),var(--jade));box-shadow:0 0 30px rgba(93,190,163,.5),0 0 60px rgba(93,190,163,.2);transform:translateY(-3px)}
+.btn-primary:active{transform:translateY(0)}
+.btn-gold{font-family:var(--font-cn);font-size:20px;letter-spacing:.2em;color:var(--bg-deep);background:linear-gradient(135deg,var(--gold),var(--gold-dark));border:2px solid var(--gold-light);padding:14px 60px;border-radius:8px;cursor:pointer;transition:all .4s ease}
+.btn-gold:hover{box-shadow:0 0 30px rgba(212,165,116,.5),0 0 60px rgba(212,165,116,.2);transform:translateY(-2px)}
+.btn-gold:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.btn-sm{font-family:var(--font-cn);font-size:13px;color:var(--text-bright);background:var(--bg-panel-light);border:1px solid var(--border);padding:6px 14px;border-radius:4px;cursor:pointer;transition:all .2s ease}
+.btn-sm:hover{border-color:var(--gold);color:var(--gold-light)}
+.btn-sm.danger{color:var(--danger-light);border-color:rgba(192,57,43,.3)}
+.btn-sm.danger:hover{border-color:var(--danger);background:rgba(192,57,43,.1)}
+.btn-reroll{font-family:var(--font-cn);font-size:14px;color:var(--text-bright);background:transparent;border:1px solid var(--border);padding:6px 20px;border-radius:4px;cursor:pointer;transition:all .2s ease;margin-left:12px}
+.btn-reroll:hover{border-color:var(--gold);color:var(--gold-light)}
+#createScreen{display:none;width:100%;height:100%;overflow-y:auto;padding:40px 20px}
+#createScreen.active{display:flex;flex-direction:column;align-items:center}
+.create-container{max-width:900px;width:100%;animation:fadeIn .6s ease}
+.create-title{text-align:center;font-family:var(--font-title);font-size:32px;color:var(--gold-light);letter-spacing:.15em;margin-bottom:30px}
+.create-section{background:var(--bg-panel);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:20px}
+.create-section h3{font-family:var(--font-title);color:var(--gold);font-size:20px;letter-spacing:.1em;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.info-row{display:flex;flex-wrap:wrap;gap:16px;align-items:center;padding:8px 0;font-size:16px}
+.info-label{color:var(--text-dim);min-width:70px}
+.info-value{color:var(--text-bright);font-weight:bold;padding:4px 12px;background:rgba(212,165,116,.1);border:1px solid var(--border);border-radius:4px}
+.info-value.rare{color:var(--rare-light);border-color:rgba(155,89,182,.3);background:rgba(155,89,182,.1)}
+.info-value.gold{color:var(--gold-light);border-color:var(--border-glow);background:rgba(212,165,116,.15)}
+.stat-row{display:flex;align-items:center;gap:12px;margin:10px 0}
+.stat-name{width:60px;color:var(--text-bright);font-size:16px;text-align:right}
+.stat-bar-container{flex:1;height:24px;background:rgba(0,0,0,.4);border-radius:4px;overflow:hidden;border:1px solid var(--border)}
+.stat-bar-fill{height:100%;background:linear-gradient(90deg,var(--jade-dark),var(--jade));transition:width .4s ease;border-radius:4px}
+.stat-ctrl{display:flex;gap:4px}
+.stat-btn{width:30px;height:30px;font-size:18px;line-height:1;background:var(--bg-panel-light);border:1px solid var(--border);color:var(--text-bright);cursor:pointer;border-radius:4px;transition:all .2s ease}
+.stat-btn:hover{border-color:var(--jade);color:var(--jade-light)}
+.stat-btn:disabled{opacity:.3;cursor:not-allowed}
+.stat-value{width:30px;text-align:center;color:var(--jade-light);font-weight:bold;font-size:16px}
+.points-remain{text-align:right;color:var(--gold);font-size:15px;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)}
+.talent-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.talent-card{background:var(--bg-panel-light);border:2px solid var(--border);border-radius:8px;padding:12px 14px;cursor:pointer;transition:all .2s ease}
+.talent-card:hover{border-color:var(--gold);transform:translateY(-2px)}
+.talent-card.selected{border-color:var(--jade);background:rgba(93,190,163,.1);box-shadow:0 0 15px rgba(93,190,163,.2)}
+.talent-card .talent-name{font-size:16px;color:var(--text-bright);font-weight:bold;margin-bottom:4px}
+.talent-card .talent-grade{font-size:12px;padding:2px 8px;border-radius:10px;display:inline-block;margin-bottom:6px}
+.talent-card .talent-desc{font-size:13px;color:var(--text-dim);line-height:1.5}
+.grade-ss{background:rgba(255,215,0,.2);color:#ffd700;border:1px solid rgba(255,215,0,.3)}
+.grade-s{background:rgba(212,165,116,.2);color:var(--gold-light);border:1px solid var(--border)}
+.grade-a{background:rgba(155,89,182,.2);color:var(--rare-light);border:1px solid rgba(155,89,182,.3)}
+.grade-b{background:rgba(93,190,163,.15);color:var(--jade-light);border:1px solid rgba(93,190,163,.2)}
+.grade-c{background:rgba(120,120,120,.15);color:#aaa;border:1px solid rgba(120,120,120,.2)}
+.talent-count{text-align:center;color:var(--gold);font-size:15px;margin:12px 0}
+#gameScreen{display:none;width:100%;height:100%}
+#gameScreen.active{display:flex}
+.left-panel{width:280px;min-width:280px;height:100%;background:var(--bg-panel);border-right:1px solid var(--border);padding:20px 16px;display:flex;flex-direction:column;overflow-y:auto;animation:slideInLeft .5s ease;z-index:2}
+.panel-header{text-align:center;padding-bottom:16px;border-bottom:1px solid var(--border);margin-bottom:16px}
+.panel-header .char-name{font-family:var(--font-title);font-size:26px;color:var(--gold-light);letter-spacing:.1em}
+.panel-header .char-realm{font-size:15px;color:var(--jade-light);margin-top:6px}
+.stat-item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:14px}
+.stat-item .s-label{color:var(--text-dim)}.stat-item .s-value{color:var(--text-bright);font-weight:bold}
+.stat-item .s-value.gold{color:var(--gold-light)}
+.title-list{margin-top:12px}
+.title-tag{display:inline-block;font-size:12px;padding:3px 10px;background:rgba(212,165,116,.1);border:1px solid var(--border);border-radius:12px;color:var(--gold);margin:3px 4px 3px 0}
+.center-area{flex:1;height:100%;display:flex;flex-direction:column;overflow:hidden;position:relative}
+.top-bar{padding:12px 20px;background:var(--bg-panel);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;z-index:2}
+.top-bar .age-display{font-family:var(--font-title);font-size:20px;color:var(--gold-light)}
+.top-bar .year-display{font-size:14px;color:var(--text-dim)}
+.top-bar .btn-group{display:flex;gap:8px}
+.event-log{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:12px}
+.log-entry{background:var(--bg-panel-light);border:1px solid var(--border);border-radius:8px;padding:14px 18px;animation:fadeIn .4s ease;font-size:15px;line-height:1.7}
+.log-entry .log-year{color:var(--gold);font-weight:bold;margin-right:8px}
+.log-entry.normal{border-left:3px solid var(--text-dim)}
+.log-entry.good{border-left:3px solid var(--jade)}
+.log-entry.great{border-left:3px solid var(--gold);background:rgba(212,165,116,.05)}
+.log-entry.danger{border-left:3px solid var(--danger)}
+.log-entry.rare{border-left:3px solid var(--rare-light)}
+.log-entry.breakthrough{border-left:3px solid var(--gold-light);background:rgba(212,165,116,.08);animation:breakthroughAnim .6s ease}
+.modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.7);z-index:100;display:flex;align-items:center;justify-content:center;animation:fadeIn .3s ease}
+.modal-box{background:var(--bg-panel);border:1px solid var(--border-glow);border-radius:12px;padding:30px;max-width:600px;width:90%;max-height:80vh;overflow-y:auto;animation:fadeInUp .4s ease;box-shadow:0 0 40px rgba(0,0,0,.5)}
+.modal-box h2{font-family:var(--font-title);color:var(--gold-light);text-align:center;margin-bottom:16px;letter-spacing:.1em}
+.modal-box p{line-height:1.8;margin-bottom:10px;color:var(--text)}
+.modal-box .btn-close{display:block;margin:20px auto 0;font-family:var(--font-cn);font-size:16px;color:var(--text-bright);background:var(--bg-panel-light);border:1px solid var(--border);padding:10px 40px;border-radius:8px;cursor:pointer;transition:all .2s ease}
+.modal-box .btn-close:hover{border-color:var(--gold);color:var(--gold-light)}
+.battle-log{font-family:Consolas,monospace;font-size:13px;line-height:1.8;color:var(--text);padding:12px;background:rgba(0,0,0,.3);border-radius:4px;max-height:300px;overflow-y:auto;white-space:pre-wrap}
+#endingScreen{display:none;width:100%;height:100%;overflow-y:auto;padding:40px 20px}
+#endingScreen.active{display:flex;flex-direction:column;align-items:center}
+.ending-container{max-width:800px;width:100%;animation:fadeIn .8s ease;background:var(--bg-panel);border:1px solid var(--border-glow);border-radius:12px;padding:40px}
+.ending-title{text-align:center;font-family:var(--font-title);font-size:36px;color:var(--gold-light);letter-spacing:.15em;margin-bottom:8px}
+.ending-grade{text-align:center;font-size:22px;color:var(--jade-light);margin-bottom:30px;padding-bottom:20px;border-bottom:1px solid var(--border)}
+.ending-section{margin-bottom:20px}
+.ending-section h3{color:var(--gold);font-size:18px;margin-bottom:10px}
+.ending-timeline{max-height:300px;overflow-y:auto;padding-right:10px}
+.ending-timeline .tl-item{padding:6px 0;border-bottom:1px solid rgba(255,255,255,.03);font-size:14px}
+.ending-timeline .tl-age{color:var(--gold);font-weight:bold;margin-right:8px}
+.fx-layer{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:50}
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:200;padding:12px 30px;background:var(--bg-panel);border:1px solid var(--border-glow);border-radius:8px;color:var(--text-bright);font-size:15px;animation:fadeIn .3s ease,fadeOut .5s ease 2s forwards;pointer-events:none}
+.btn-continue{margin:16px auto;display:block;font-family:var(--font-cn);font-size:16px;letter-spacing:.1em;color:var(--bg-deep);background:linear-gradient(135deg,var(--jade),var(--jade-dark));border:1px solid var(--jade-light);padding:10px 40px;border-radius:8px;cursor:pointer;transition:all .4s ease}
+.btn-restart{display:block;margin:30px auto 0;font-family:var(--font-cn);font-size:20px;letter-spacing:.2em;color:var(--bg-deep);background:linear-gradient(135deg,var(--gold),var(--gold-dark));border:2px solid var(--gold-light);padding:14px 60px;border-radius:8px;cursor:pointer;transition:all .4s ease}
+.btn-restart:hover{box-shadow:0 0 30px rgba(212,165,116,.5);transform:translateY(-2px)}
+#simControls{display:none;padding:10px 20px;background:var(--bg-panel);border-top:1px solid var(--border);gap:8px;justify-content:center;z-index:2}
+#pausePrompt{display:none;position:absolute;bottom:80px;left:50%;transform:translateX(-50%);z-index:10;background:var(--bg-panel);border:1px solid var(--border-glow);border-radius:12px;padding:16px 30px;text-align:center}
+@media(max-width:768px){#gameScreen.active{flex-direction:column}.left-panel{width:100%;min-width:0;height:auto;max-height:35%;flex-shrink:0}.center-area{height:65%}}
+
+</style>
+</head>
+<body>
+<canvas id="bgCanvas"></canvas>
+<div id="app">
+<div id="homeScreen" class="active">
+<div class="title-container">
+<div class="game-title">人生地图</div>
+<div class="decoration-line"></div>
+<div class="game-subtitle">一念凡尘，一步飞升。</div>
+<button class="btn-primary" onclick="Game.startNewGame()">踏入仙途</button>
+</div>
+</div>
+<div id="createScreen">
+<div class="create-container">
+<div class="create-title">—— 天命初现 ——</div>
+<div class="create-section" id="basicInfo"></div>
+<div class="create-section" id="statsSection"></div>
+<div class="create-section" id="talentSection"></div>
+<button class="btn-gold" id="btnStartLife" disabled onclick="Game.confirmCreate()">开始人生</button>
+</div>
+</div>
+<div id="gameScreen">
+<div class="left-panel" id="leftPanel"></div>
+<div class="center-area">
+<div class="top-bar">
+<span class="age-display" id="ageDisplay">1岁</span>
+<span class="year-display" id="yearDisplay"></span>
+<div class="btn-group">
+<button class="btn-sm danger" onclick="Game.restart()">再入轮回</button>
+</div>
+</div>
+<div class="event-log" id="eventLog"></div>
+<div id="simControls" style="display:none">
+<button class="btn-sm" onclick="LifeSimulator.fastForward()">快进</button>
+<button class="btn-sm" onclick="LifeSimulator.normalSpeed()">常速</button>
+<button class="btn-sm danger" onclick="Game.restart()">放弃修仙</button>
+</div>
+<div id="pausePrompt">
+<p id="pauseText" style="color:var(--gold-light);font-size:16px;margin-bottom:10px"></p>
+<button class="btn-primary" onclick="LifeSimulator.resume()" style="font-size:14px;padding:8px 30px">继续推演</button>
+</div>
+</div>
+</div>
+<div id="endingScreen">
+<div class="ending-container" id="endingContent"></div>
+</div>
+</div>
+<div id="modalContainer"></div>
+<div class="fx-layer" id="fxLayer"></div>
+<script>
+const CONFIG={SAVE_KEY:'life_map_save',TOTAL_STAT_POINTS:20,MAX_STAT:15,MIN_STAT:1,INITIAL_AGE:1,INITIAL_LIFESPAN:60,INITIAL_SPIRIT_STONES:100,TALENT_POOL_SIZE:10,TALENT_SELECT_COUNT:3,BASE_CULTIVATION_RATE:100,SIM_SPEED:800,SIM_FAST_SPEED:100,EVENT_CHANCE_PER_YEAR:1.0,COMBAT_DEATH_BASE:0.05};
+const Utils={randInt(min,max){return Math.floor(Math.random()*(max-min+1))+min},rand(){return Math.random()},pick(arr){return arr[Utils.randInt(0,arr.length-1)]},pickN(arr,n){const s=[...arr];for(let i=s.length-1;i>0;i--){const j=Utils.randInt(0,i);[s[i],s[j]]=[s[j],s[i]]}return s.slice(0,n)},chance(prob){return Utils.rand()<prob},clamp(v,min,max){return Math.max(min,Math.min(max,v))}};
+const DATA={};
+DATA.DAO_NAMES={prefixes:["清","云","玄","长","太","归","紫","玉","苍","青","白","金","丹","天","灵","无","虚","道","明","妙","神","圣","仙","真","古","上","元","通","慧","静","飞","寒","碧","赤","幽","素","风","雷","火","冰","星","月","日","霄","极","九","三","万","千","百","浩","混","鸿","逍遥","太一","悟","觉","空"],suffixes:["玄","逸","尘","歌","虚","元","阳","真","清","明","霄","微","风","云","羽","机","华","辰","心","灵","道","仙","子","君","尊","圣","天","渊","然","空","一","极","远","行","寂","宁","和","安","遥","恒","长","初","凡","生"],generate(){return Utils.pick(this.prefixes)+Utils.pick(this.suffixes)}};
+DATA.SPIRIT_ROOTS={types:["金","木","水","火","土","雷","风","冰"],generate(){const r=Utils.rand();if(r<0.03)return{name:"天灵根",elements:Utils.pickN(this.types,1),speed:3.0,breakthroughBonus:0.25,grade:"ss"};if(r<0.08)return{name:"变异灵根",elements:Utils.pickN(this.types,Utils.randInt(1,2)),speed:2.5,breakthroughBonus:0.20,grade:"s"};if(r<0.25)return{name:"单灵根",elements:Utils.pickN(this.types,1),speed:2.0,breakthroughBonus:0.15,grade:"a"};if(r<0.55)return{name:"双灵根",elements:Utils.pickN(this.types,2),speed:1.5,breakthroughBonus:0.10,grade:"b"};if(r<0.85)return{name:"三灵根",elements:Utils.pickN(this.types,3),speed:1.0,breakthroughBonus:0.05,grade:"c"};return{name:"杂灵根",elements:Utils.pickN(this.types,Utils.randInt(4,5)),speed:0.6,breakthroughBonus:0.0,grade:"c"}}};
+DATA.REALMS=[{id:0,name:"凡人",expRequired:0,lifespanBonus:0,breakthroughChance:0,failPenalty:""},{id:1,name:"炼气一层",expRequired:500,lifespanBonus:5,breakthroughChance:0.95,failPenalty:""},{id:2,name:"炼气二层",expRequired:1200,lifespanBonus:5,breakthroughChance:0.90,failPenalty:""},{id:3,name:"炼气三层",expRequired:2200,lifespanBonus:5,breakthroughChance:0.85,failPenalty:""},{id:4,name:"炼气四层",expRequired:3800,lifespanBonus:10,breakthroughChance:0.80,failPenalty:""},{id:5,name:"炼气五层",expRequired:6000,lifespanBonus:10,breakthroughChance:0.75,failPenalty:""},{id:6,name:"炼气六层",expRequired:9000,lifespanBonus:10,breakthroughChance:0.70,failPenalty:""},{id:7,name:"炼气七层",expRequired:13000,lifespanBonus:15,breakthroughChance:0.65,failPenalty:""},{id:8,name:"炼气八层",expRequired:18000,lifespanBonus:15,breakthroughChance:0.60,failPenalty:""},{id:9,name:"炼气九层",expRequired:25000,lifespanBonus:15,breakthroughChance:0.55,failPenalty:"修为倒退一层"},{id:10,name:"炼气十层",expRequired:35000,lifespanBonus:20,breakthroughChance:0.50,failPenalty:"修为倒退两层"},{id:11,name:"筑基",expRequired:60000,lifespanBonus:50,breakthroughChance:0.40,failPenalty:"修为大损，倒退三层"},{id:12,name:"金丹",expRequired:120000,lifespanBonus:100,breakthroughChance:0.30,failPenalty:"丹碎人伤，倒退五层"},{id:13,name:"元婴",expRequired:250000,lifespanBonus:200,breakthroughChance:0.20,failPenalty:"元婴溃散，退回筑基"},{id:14,name:"化神",expRequired:500000,lifespanBonus:400,breakthroughChance:0.15,failPenalty:"神念崩溃，退回金丹"},{id:15,name:"炼虚",expRequired:1000000,lifespanBonus:800,breakthroughChance:0.10,failPenalty:"虚空反噬，退回元婴"},{id:16,name:"合体",expRequired:2000000,lifespanBonus:1500,breakthroughChance:0.08,failPenalty:"合体失败，退回化神"},{id:17,name:"渡劫",expRequired:4000000,lifespanBonus:3000,breakthroughChance:0.05,failPenalty:"雷劫殒命"},{id:18,name:"大乘",expRequired:8000000,lifespanBonus:5000,breakthroughChance:0.03,failPenalty:""},{id:19,name:"飞升",expRequired:99999999,lifespanBonus:99999,breakthroughChance:0,failPenalty:""}];
+DATA.TALENTS=[{id:"t001",name:"天命之子",grade:"ss",desc:"天地气运加身。",effects:{luck:5,adventureRate:0.3,breakthroughBonus:0.15,lifespanBonus:30}},{id:"t002",name:"绝世灵根",grade:"ss",desc:"灵根品质超越常人。",effects:{cultivationRate:1.0,breakthroughBonus:0.10}},{id:"t003",name:"先天道体",grade:"ss",desc:"天生适合修仙的体质。",effects:{constitution:4,intelligence:3,cultivationRate:0.5}},{id:"t004",name:"大器晚成",grade:"s",desc:"后期修炼速度爆发式增长。",effects:{cultivationLateBoost:0.5}},{id:"t005",name:"气运滔天",grade:"s",desc:"运气极佳，逢凶化吉。",effects:{luck:4,deathResist:0.3,adventureRate:0.15}},{id:"t006",name:"炼丹奇才",grade:"s",desc:"炼丹成功率大幅提升。",effects:{alchemyBonus:0.4}},{id:"t007",name:"剑道通神",grade:"s",desc:"剑道悟性超凡。",effects:{combatPower:0.5,swordEvents:0.2}},{id:"t008",name:"长寿体质",grade:"s",desc:"寿元远超常人。",effects:{lifespanBonus:60,constitution:2}},{id:"t009",name:"悟性逆天",grade:"s",desc:"悟性惊人。",effects:{breakthroughBonus:0.12,intelligence:3}},{id:"t010",name:"福缘深厚",grade:"s",desc:"福缘极佳。",effects:{luck:3,adventureRate:0.1,spiritStoneRate:0.5}},{id:"t011",name:"厄运缠身",grade:"c",desc:"运气极差但危机含机遇。",effects:{luck:-3,adventureRate:-0.05,dangerEvents:0.2}},{id:"t012",name:"孤星命格",grade:"c",desc:"孤身一人，意志坚定。",effects:{constitution:2,intelligence:2,socialPenalty:0.3}},{id:"t013",name:"魔道圣体",grade:"a",desc:"魔道体质，战力强横。",effects:{combatPower:0.4,cultivationRate:0.3,dangerEvents:0.1}},{id:"t014",name:"丹道宗师",grade:"a",desc:"丹道造诣深厚。",effects:{alchemyBonus:0.3,pillEffect:0.5}},{id:"t015",name:"财神眷顾",grade:"a",desc:"财运亨通。",effects:{spiritStoneRate:1.0,wealth:3}},{id:"t016",name:"魅力非凡",grade:"b",desc:"魅力过人。",effects:{socialEvents:0.2,companionChance:0.15}},{id:"t017",name:"阵法大师",grade:"b",desc:"阵法造诣深厚。",effects:{formationBonus:0.3,intelligence:1}},{id:"t018",name:"炼器天才",grade:"b",desc:"炼器成功率大增。",effects:{craftBonus:0.3,constitution:1}},{id:"t019",name:"符箓奇才",grade:"b",desc:"符箓绘制天赋。",effects:{talismanBonus:0.3,intelligence:1}},{id:"t020",name:"灵兽亲和",grade:"b",desc:"容易获得灵兽认主。",effects:{beastChance:0.2,luck:1}},{id:"t021",name:"百毒不侵",grade:"a",desc:"毒抗极高。",effects:{constitution:3,poisonImmune:true}},{id:"t022",name:"天生神力",grade:"b",desc:"肉身力量惊人。",effects:{constitution:3,combatPower:0.15}},{id:"t023",name:"过目不忘",grade:"b",desc:"记忆力超群。",effects:{intelligence:3,cultivationRate:0.15}},{id:"t024",name:"金刚不坏",grade:"a",desc:"肉身坚固。",effects:{constitution:4,defenseBonus:0.3}},{id:"t025",name:"灵根变异",grade:"a",desc:"灵根可能变异进化。",effects:{rootEvolveChance:0.05,cultivationRate:0.2}},{id:"t026",name:"凤凰涅槃",grade:"s",desc:"死亡时可涅槃重生一次。",effects:{revive:1,lifespanBonus:20}},{id:"t027",name:"天机推演",grade:"a",desc:"能预知危险。",effects:{dangerEvents:-0.15,intelligence:2}},{id:"t028",name:"万象归宗",grade:"s",desc:"精通万法。",effects:{cultivationRate:0.6,intelligence:1}},{id:"t029",name:"血脉觉醒",grade:"a",desc:"体内隐藏上古血脉。",effects:{cultivationRate:0.3,breakthroughBonus:0.05,combatPower:0.1}},{id:"t030",name:"天地共鸣",grade:"s",desc:"与天地大道共鸣。",effects:{cultivationRate:0.4,breakthroughBonus:0.08}},{id:"t031",name:"医道圣手",grade:"b",desc:"医术精湛。",effects:{healRate:0.3,intelligence:1}},{id:"t032",name:"神念通达",grade:"b",desc:"神念强大。",effects:{intelligence:2,adventureRate:0.05}},{id:"t033",name:"道心坚定",grade:"b",desc:"突破失败损失减半。",effects:{failPenaltyHalf:true}},{id:"t034",name:"五行俱全",grade:"a",desc:"五行灵根皆有。",effects:{cultivationRate:0.2,techniqueBonus:0.2}},{id:"t035",name:"雷劫淬体",grade:"a",desc:"雷劫失败伤害减半。",effects:{tribulationResist:0.5,constitution:2}},{id:"t036",name:"空间天赋",grade:"a",desc:"可开辟储物空间。",effects:{storage:true,intelligence:1}},{id:"t037",name:"时间感知",grade:"s",desc:"修炼事半功倍。",effects:{cultivationRate:0.5,intelligence:2}},{id:"t038",name:"阴阳调和",grade:"b",desc:"阴阳平衡。",effects:{breakthroughBonus:0.04,constitution:1,intelligence:1}},{id:"t039",name:"星辰之体",grade:"a",desc:"可引星辰之力修炼。",effects:{cultivationRate:0.25,nightBonus:0.1}},{id:"t040",name:"兽王血脉",grade:"a",desc:"拥有上古妖兽血脉。",effects:{combatPower:0.35,constitution:3}}];
+DATA.TALENTS.push({id:"t041",name:"仙缘深厚",grade:"a",desc:"与仙界有特殊缘分，奇遇概率大增。",effects:{adventureRate:0.2,luck:2}});
+DATA.TALENTS.push({id:"t042",name:"天罚之体",grade:"c",desc:"雷劫更猛烈但成功后收益更大。",effects:{tribulationHarder:true,breakthroughBonus:0.1}});
+DATA.TALENTS.push({id:"t043",name:"玲珑心",grade:"b",desc:"心思玲珑，商道天赋过人。",effects:{spiritStoneRate:0.3,intelligence:1}});
+DATA.TALENTS.push({id:"t044",name:"磐石意志",grade:"b",desc:"意志如磐石，不受心魔影响。",effects:{breakthroughBonus:0.05,constitution:1}});
+DATA.TALENTS.push({id:"t045",name:"残魂附体",grade:"c",desc:"体内有上古残魂，偶尔指路但也惹事。",effects:{adventureRate:0.1,dangerEvents:0.1}});
+DATA.TALENTS.push({id:"t046",name:"天眼通",grade:"a",desc:"天生神眼，可看破虚妄与禁制。",effects:{adventureRate:0.1,intelligence:2,seeThrough:true}});
+DATA.TALENTS.push({id:"t047",name:"饕餮之胃",grade:"b",desc:"丹药吸收效率极高，药效翻倍。",effects:{pillEffect:0.4,constitution:1}});
+DATA.TALENTS.push({id:"t048",name:"万法不侵",grade:"a",desc:"对各种法术有天然抗性。",effects:{magicResist:0.3,defenseBonus:0.15}});
+DATA.TALENTS.push({id:"t049",name:"虚空行者",grade:"a",desc:"可短距离穿越虚空，危难时保命。",effects:{escapeChance:0.3,intelligence:1}});
+DATA.TALENTS.push({id:"t050",name:"轮回印记",grade:"ss",desc:"前世大能转世，携带部分记忆与感悟。",effects:{cultivationRate:0.8,breakthroughBonus:0.1,intelligence:3}});
+DATA.TALENTS.push({id:"t051",name:"天罚免疫",grade:"s",desc:"雷劫伤害减半，天劫对你如同淬炼。",effects:{tribulationResist:0.5}});
+DATA.TALENTS.push({id:"t052",name:"万象天引",grade:"a",desc:"可吸收周边灵气，修炼不受环境限制。",effects:{cultivationRate:0.3}});
+DATA.TALENTS.push({id:"t053",name:"不朽之魂",grade:"s",desc:"寿元极长，远超同阶修士。",effects:{lifespanBonus:100,constitution:2}});
+DATA.TALENTS.push({id:"t054",name:"命运之子",grade:"s",desc:"命运总是眷顾你，遇难成祥。",effects:{luck:5,deathResist:0.2}});
+DATA.TALENTS.push({id:"t055",name:"武道至尊",grade:"a",desc:"近战能力极强，拳碎山河。",effects:{combatPower:0.4,constitution:2}});
+DATA.TALENTS.push({id:"t056",name:"天工造物",grade:"b",desc:"打造法器品质提升，巧夺天工。",effects:{craftBonus:0.25}});
+DATA.TALENTS.push({id:"t057",name:"阴阳眼",grade:"b",desc:"可见鬼魂和灵气流动，趋吉避凶。",effects:{adventureRate:0.05,intelligence:1}});
+DATA.TALENTS.push({id:"t058",name:"不灭金身",grade:"s",desc:"肉身近乎不灭，防御力惊世骇俗。",effects:{constitution:5,defenseBonus:0.4}});
+DATA.TALENTS.push({id:"t059",name:"万毒之源",grade:"c",desc:"体内毒力极强但可操控，以毒攻毒。",effects:{combatPower:0.2,poisonMaster:true}});
+DATA.TALENTS.push({id:"t060",name:"元始之体",grade:"ss",desc:"上古元始体质，万法归宗之源。",effects:{cultivationRate:1.2,breakthroughBonus:0.18,lifespanBonus:50}});
+DATA.TALENTS.push({id:"t061",name:"风灵之体",grade:"b",desc:"风属性亲和，身法灵动迅捷。",effects:{cultivationRate:0.15,speedBonus:0.2}});
+DATA.TALENTS.push({id:"t062",name:"火德之体",grade:"b",desc:"火属性功法威力大增，炼丹事半功倍。",effects:{fireBonus:0.3,combatPower:0.1}});
+DATA.TALENTS.push({id:"t063",name:"水灵体",grade:"b",desc:"水属性亲和，恢复能力超群。",effects:{healRate:0.2,cultivationRate:0.1}});
+DATA.TALENTS.push({id:"t064",name:"土德之体",grade:"b",desc:"防御力大增，立于大地战力倍增。",effects:{defenseBonus:0.25,constitution:1}});
+DATA.TALENTS.push({id:"t065",name:"金身罗汉",grade:"a",desc:"金系功法修炼加速，肉身坚不可摧。",effects:{cultivationRate:0.2,combatPower:0.2,constitution:2}});
+DATA.TALENTS.push({id:"t066",name:"木灵之体",grade:"b",desc:"生命力旺盛，寿元自然延长。",effects:{lifespanBonus:25,healRate:0.15}});
+DATA.TALENTS.push({id:"t067",name:"雷灵体",grade:"a",desc:"雷属性亲和，雷劫对你反而是助力。",effects:{tribulationResist:0.3,combatPower:0.2}});
+DATA.TALENTS.push({id:"t068",name:"冰肌玉骨",grade:"a",desc:"冰属性体质，容颜不老气质出尘。",effects:{constitution:2,cultivationRate:0.15}});
+DATA.TALENTS.push({id:"t069",name:"太阳之体",grade:"a",desc:"至阳体质，阴邪不侵百毒辟易。",effects:{combatPower:0.25,evilResist:true}});
+DATA.TALENTS.push({id:"t070",name:"太阴之体",grade:"a",desc:"至阴体质，夜间修炼速度翻倍。",effects:{nightBonus:0.2,cultivationRate:0.1}});
+DATA.TALENTS.push({id:"t071",name:"混沌灵根",grade:"ss",desc:"混沌属性的灵根，包罗万象。",effects:{cultivationRate:1.0,breakthroughBonus:0.15}});
+DATA.TALENTS.push({id:"t072",name:"天人感应",grade:"a",desc:"与天道感应，偶尔获得天启指引。",effects:{adventureRate:0.15,intelligence:2}});
+DATA.TALENTS.push({id:"t073",name:"炼魂宗师",grade:"b",desc:"魂魄修炼专家，神识远超同阶。",effects:{cultivationRate:0.1,intelligence:2}});
+DATA.TALENTS.push({id:"t074",name:"傀儡大师",grade:"b",desc:"傀儡制作天赋，可操控傀儡助战。",effects:{craftBonus:0.15,combatPower:0.1}});
+DATA.TALENTS.push({id:"t075",name:"音律天赋",grade:"b",desc:"音律功法加成，以乐入道。",effects:{cultivationRate:0.1,combatPower:0.1}});
+DATA.TALENTS.push({id:"t076",name:"棋道圣手",grade:"b",desc:"棋艺精湛，推演布局能力增强。",effects:{intelligence:2}});
+DATA.TALENTS.push({id:"t077",name:"茶道宗师",grade:"c",desc:"茶道造诣深厚，以茶会友广结善缘。",effects:{socialEvents:0.1}});
+DATA.TALENTS.push({id:"t078",name:"书道通神",grade:"b",desc:"书法入道，悟性提升。",effects:{intelligence:2,cultivationRate:0.05}});
+DATA.TALENTS.push({id:"t079",name:"画道宗师",grade:"b",desc:"画境入道，幻术精通。",effects:{intelligence:1,illusionResist:0.3}});
+DATA.TALENTS.push({id:"t080",name:"阵道天才",grade:"a",desc:"阵法天赋极高，布阵破阵如鱼得水。",effects:{formationBonus:0.4,intelligence:2}});
+DATA.TALENTS.push({id:"t081",name:"御兽宗师",grade:"a",desc:"灵兽亲和度极高，万兽来朝。",effects:{beastChance:0.3,combatPower:0.15}});
+DATA.TALENTS.push({id:"t082",name:"天机神算",grade:"s",desc:"可推演未来，规避灾祸于未然。",effects:{dangerEvents:-0.2,intelligence:3}});
+DATA.TALENTS.push({id:"t083",name:"幽冥之体",grade:"c",desc:"阴气极重，常人避之不及但鬼道亲和。",effects:{socialPenalty:0.3,ghostAffinity:true}});
+DATA.TALENTS.push({id:"t084",name:"纯阳之体",grade:"a",desc:"阳气充足，百邪不侵万法难伤。",effects:{constitution:3,evilResist:true}});
+DATA.TALENTS.push({id:"t085",name:"天生异瞳",grade:"a",desc:"异瞳可看破伪装与禁制，洞察秋毫。",effects:{adventureRate:0.1,seeThrough:true}});
+DATA.TALENTS.push({id:"t086",name:"万灵体",grade:"s",desc:"可与万灵沟通，天地万物皆为耳目。",effects:{beastChance:0.25,adventureRate:0.1}});
+DATA.TALENTS.push({id:"t087",name:"不灭意志",grade:"a",desc:"意志力极强，突破失败不降修为。",effects:{failImmune:true}});
+DATA.TALENTS.push({id:"t088",name:"血魔之体",grade:"c",desc:"嗜血体质，战力强横但易入魔道。",effects:{combatPower:0.3,dangerEvents:0.15}});
+DATA.TALENTS.push({id:"t089",name:"天香体",grade:"b",desc:"身体散发异香，灵兽亲近、人缘极佳。",effects:{beastChance:0.15,socialEvents:0.1}});
+DATA.TALENTS.push({id:"t090",name:"天残地缺",grade:"c",desc:"天生残缺，但其他方面远超常人。",effects:{constitution:-2,intelligence:4,cultivationRate:0.3}});
+DATA.TALENTS.push({id:"t091",name:"气运之子",grade:"s",desc:"气运极佳，逢凶化吉遇难成祥。",effects:{luck:6,adventureRate:0.2}});
+DATA.TALENTS.push({id:"t092",name:"天地无极",grade:"a",desc:"肉身与元神皆远超同阶。",effects:{constitution:2,intelligence:2}});
+DATA.TALENTS.push({id:"t093",name:"仙帝血脉",grade:"ss",desc:"上古仙帝后裔，血脉中蕴含无上传承。",effects:{cultivationRate:0.8,breakthroughBonus:0.12,combatPower:0.3}});
+DATA.TALENTS.push({id:"t094",name:"魔帝血脉",grade:"s",desc:"上古魔帝后裔，战力惊天。",effects:{combatPower:0.5,cultivationRate:0.4,dangerEvents:0.1}});
+DATA.TALENTS.push({id:"t095",name:"妖帝血脉",grade:"s",desc:"妖帝后裔，肉身强悍无匹。",effects:{constitution:5,combatPower:0.3}});
+DATA.TALENTS.push({id:"t096",name:"鬼帝血脉",grade:"a",desc:"鬼道天赋极高，幽冥之力加身。",effects:{ghostAffinity:true,cultivationRate:0.3}});
+DATA.TALENTS.push({id:"t097",name:"凡人之心",grade:"c",desc:"心性平凡，但道基稳固不易动摇。",effects:{breakthroughBonus:0.03}});
+DATA.TALENTS.push({id:"t098",name:"天妒之才",grade:"s",desc:"天赋太高反遭天妒，雷劫更猛但收益巨大。",effects:{cultivationRate:0.7,tribulationHarder:true}});
+DATA.TALENTS.push({id:"t099",name:"逆天改命",grade:"ss",desc:"命运由我不由天，一切皆有可能。",effects:{luck:3,deathResist:0.25,breakthroughBonus:0.08}});
+DATA.TALENTS.push({id:"t100",name:"逍遥游",grade:"a",desc:"自由自在不受拘束，天地任逍遥。",effects:{adventureRate:0.15,luck:2}});
+
+DATA.EVENT_POOL=[];
+function Evt(id,title,desc,cat,minAge,maxAge,weight,reqs,effects){
+  DATA.EVENT_POOL.push({id:id,title:title,description:desc,category:cat,minAge:minAge||0,maxAge:maxAge||999,weight:weight||10,requirements:reqs||{},results:effects||{}});
+}
+
+// ===== [0-5岁 幼年期] =====
+Evt("e001","出生异象","出生之日，天降祥瑞，紫气东来三千里。族人皆言此子不凡。","cultivate",0,3,15,{},{reputation:10,cultivationExp:100});
+Evt("e002","灵根初显","三岁时无意间触碰祖传玉佩，玉佩发出微光，灵根初次显现。","cultivate",2,5,12,{},{cultivationExp:150});
+Evt("e003","族老探脉","族中长老亲自为你探查根骨，惊叹此子天赋异禀，决定重点培养。","social",3,6,14,{},{reputation:15,cultivationExp:200});
+Evt("e004","误入灵脉","在山中玩耍时误入一处灵脉汇聚之地，灵气入体，体质增强。","adventure",3,6,10,{minConstitution:1},{constitution:1,cultivationExp:180});
+Evt("e005","族中测试","四岁时参加族中灵根测试，引起轰动。家族决定倾力培养。","social",3,5,13,{},{spiritStones:100,reputation:20});
+Evt("e006","启蒙识字","母亲教你识字读书，你天资聪颖，过目不忘，很快就学会了基础文字。","cultivate",2,5,10,{minIntelligence:1},{intelligence:1});
+Evt("e007","病中悟道","五岁时大病一场，高烧中恍惚间看到大道轨迹，病愈后心性大变。","disaster",3,6,8,{},{constitution:-1,intelligence:2,cultivationExp:100});
+Evt("e008","灵兽亲近","院中常有小动物主动靠近你，族老说这是天生灵体之象。","social",2,5,9,{minLuck:1},{reputation:5});
+
+// ===== [6-12岁 少年期] =====
+Evt("e009","启蒙恩师","六岁时遇到一位云游散修，对方见你根骨不凡，收为记名弟子。","master",6,10,12,{},{technique:"吐纳术",cultivationExp:300});
+Evt("e010","私塾求学","进入族中私塾学习，在众多孩童中脱颖而出，夫子赞不绝口。","cultivate",6,9,10,{minIntelligence:2},{intelligence:1,cultivationExp:100});
+Evt("e011","初次引气","在师父指导下第一次尝试引气入体，虽磕磕绊绊但成功感应到了灵气。","cultivate",7,12,15,{},{cultivationExp:200});
+Evt("e012","与同龄切磋","与族中同龄天才切磋，虽然落败但学到了很多战斗技巧。","combat",8,12,11,{},{combatExp:50,cultivationExp:100});
+Evt("e013","发现残缺功法","在废弃书房中发现一本残缺的吐纳功法，尝试修炼竟有效果。","adventure",8,12,9,{},{technique:"吐纳术",cultivationExp:250});
+Evt("e014","山野遇险","独自进山采药时遭遇野兽，凭借机智和勇气脱险。","disaster",9,12,8,{},{constitution:1,danger:true});
+Evt("e015","天赋初显","十岁时修炼速度突然大增，似乎体内某种力量在觉醒。","cultivate",9,12,10,{},{cultivationExp:500,breakthroughBonus:0.02});
+Evt("e016","族比扬名","十二岁时参加族中大比，以弱胜强击败数名年长对手，一战成名。","social",11,13,13,{},{reputation:30,spiritStones:50});
+
+// ===== [13-18岁 青年期] =====
+Evt("e017","宗门选拔","十三岁时恰逢青云宗开门收徒，你在选拔中表现出色被录取。","sect",13,16,16,{},{sect:"青云宗",cultivationExp:400,reputation:20});
+Evt("e018","拜入宗门","正式成为外门弟子，领取宗门基础功法和修炼资源。","sect",13,17,14,{},{technique:"青云剑诀",spiritStones:50,cultivationExp:300});
+Evt("e019","师尊收徒","因天资出众被宗门一位金丹长老收为亲传弟子。","master",14,18,8,{minIntelligence:3},{cultivationExp:1000,reputation:40,title:"亲传弟子"});
+Evt("e020","秘境初探","随师兄探索一处低阶秘境，虽险象环生但收获颇丰。","adventure",15,18,12,{},{spiritStones:300,cultivationExp:500});
+Evt("e021","坊市奇遇","第一次独自逛修仙坊市，在一处不起眼的小摊上淘到珍稀材料。","market",14,18,10,{minLuck:2},{spiritStones:-100,artifact:"青锋剑"});
+Evt("e022","情窦初开","在宗门中遇到一位气质出众的师姐，心中萌生好感。","romance",15,18,7,{},{companion:true});
+Evt("e023","修炼瓶颈","修炼到关键时刻遭遇瓶颈，修为停滞不前，苦闷不已。","cultivate",15,18,9,{},{cultivationExp:200,danger:true});
+Evt("e024","天才挑战","被同门天才弟子当众挑战，经历苦战后获得对手认可。","combat",14,18,10,{},{combatExp:100,reputation:15});
+Evt("e025","丹道启蒙","偶然接触到炼丹之道，对此产生了浓厚兴趣。","craft",15,18,8,{},{pill:"聚气丹"});
+
+// ===== [19-40岁 修炼期前期] =====
+Evt("e026","突破炼气","经过多年苦修终于突破炼气期瓶颈，修为大增。","cultivate",19,30,18,{},{cultivationExp:2000,breakthroughBonus:0.03});
+Evt("e027","秘境探险","听闻一处秘境开启，与几位同门组队前往探索。","adventure",20,35,14,{},{spiritStones:500,artifact:"碧水剑",cultivationExp:800});
+Evt("e028","宗门任务","接到第一个宗门外出任务，独自下山斩妖除魔。","combat",20,35,12,{},{combat:true,difficulty:"medium",reputation:20});
+Evt("e029","坊市买卖","在坊市开始经营自己的小生意，赚到了第一笔灵石收入。","market",20,35,10,{minFamily:2},{spiritStones:300});
+Evt("e030","结识挚友","在历练中遇到一位意气相投的同阶修士，结为生死之交。","social",20,35,11,{},{companion:true,reputation:10});
+Evt("e031","获得筑基丹","因表现出色被宗门赏赐一枚筑基丹，为未来突破做准备。","sect",22,38,9,{},{pill:"筑基丹"});
+Evt("e032","妖兽遭遇","外出时遭遇妖兽袭击，虽受伤但战斗中有所感悟。","combat",22,38,11,{},{combat:true,difficulty:"medium",danger:true,cultivationExp:400});
+Evt("e033","顿悟天地","修炼中突然进入顿悟状态，三天三夜不吃不喝，修为大进。","cultivate",25,40,6,{minIntelligence:4},{cultivationExp:5000,intelligence:1});
+Evt("e034","古修洞府","误入一处古修洞府，从中获得前辈的修炼心得和遗宝。","adventure",28,40,8,{minLuck:3},{spiritStones:1000,technique:"太虚心经"});
+Evt("e035","炼丹有成","第一次成功炼制出品质不错的丹药，丹道之路正式开启。","craft",25,40,9,{},{pill:"聚气丹",reputation:10});
+Evt("e036","宗门大比","参加宗门十年一度的大比，在众多弟子中脱颖而出。","sect",25,40,10,{},{reputation:50,spiritStones:300,cultivationExp:1000});
+Evt("e037","红颜知己","在宗门中遇到一位温柔善良的女修，两人日久生情。","romance",25,40,7,{},{romance:true,reputation:5});
+
+// ===== [41-80岁 修炼期中期] =====
+Evt("e038","突破筑基","成功筑基，从此真正踏入修仙大道，寿元大增。","cultivate",40,70,16,{},{cultivationExp:5000,lifespan:30});
+Evt("e039","继任执事","因多年表现优异被宗门任命为执事，管理一方事务。","sect",40,65,12,{minRep:30},{sectRank:"执事",reputation:30});
+Evt("e040","上古遗迹","探索一处上古遗迹时触发传送阵，被传送到一片灵药遍地的秘境。","adventure",42,70,9,{minLuck:3},{spiritStones:2000,cultivationExp:3000,pill:"天元丹"});
+Evt("e041","炼制法器","耗费三年心血终于炼制出一件品相上佳的法器。","craft",40,65,8,{},{artifact:"紫电剑"});
+Evt("e042","论道大会","受邀参加修仙界百年一度的论道大会，与各路高手交流。","social",45,75,10,{minRep:20},{cultivationExp:3000,reputation:50,intelligence:1});
+Evt("e043","妖兽围城","妖兽潮来袭，你率众守卫宗门三日三夜，力保不失。","combat",45,75,12,{},{combat:true,difficulty:"hard",reputation:80,title:"护宗功臣"});
+Evt("e044","心魔来袭","修为提升过快导致心魔趁虚而入，险些走火入魔。","disaster",50,80,8,{minIntelligence:1},{danger:true,cultivationExp:-1000});
+Evt("e045","炼丹宗师","多年钻研丹道终于大成，所炼丹药品质超群。","craft",55,80,7,{},{reputation:60,title:"炼丹大师",pill:"九转金丹"});
+Evt("e046","金丹大道","成功凝结金丹，从此寿元大增，在修仙界已是一方人物。","cultivate",55,90,14,{},{cultivationExp:10000,lifespan:50,reputation:60});
+Evt("e047","创立商会","以多年积累的人脉和资源创立自己的商会，生意遍布各地。","market",50,80,6,{minFamily:4},{spiritStones:5000,reputation:40,title:"商会之主"});
+Evt("e048","收徒传道","见后辈中有可造之材，破例收为弟子，传承衣钵。","master",55,90,8,{minRep:30},{reputation:30,title:"传道者"});
+
+// ===== [81-150岁 修炼期后期] =====
+Evt("e049","元婴大成","成功凝结元婴，寿元暴增，在修仙界已是顶尖存在。","cultivate",80,150,12,{},{cultivationExp:50000,lifespan:200,reputation:150,title:"元婴真君"});
+Evt("e050","宗门长老","功高望重，被推举为宗门长老，参与宗门重大决策。","sect",80,150,10,{minRep:50},{sectRank:"长老",reputation:100,title:"宗门长老"});
+Evt("e051","上古禁地","闯入一处上古禁地，九死一生中获得惊天机缘。","adventure",85,150,6,{minLuck:4},{cultivationExp:50000,technique:"混沌无极功",danger:true});
+Evt("e052","正魔大战","正魔两道爆发千年大战，你在战场上力挽狂澜。","combat",80,150,9,{},{combat:true,difficulty:"hard",reputation:200,title:"战场传奇"});
+Evt("e053","寿元危机","感到寿元流逝加速，不得不拼命修炼以求突破续命。","lifespan",90,150,10,{},{cultivationExp:20000,danger:true});
+Evt("e054","仙界契机","偶然获得与仙界沟通的契机，从此修行之路更加明朗。","adventure",90,150,5,{minLuck:5},{cultivationExp:30000,breakthroughBonus:0.05});
+Evt("e055","创立宗门","脱离原有宗门，自创一派，开宗立派成为一代宗师。","sect",100,180,4,{minRep:80},{title:"开派祖师",reputation:300,spiritStones:-10000});
+Evt("e056","化神天劫","冲击化神境界引动天劫，历经九死一生终成功突破。","tribulation",100,180,8,{},{cultivationExp:30000,lifespan:300,danger:true});
+Evt("e057","隐居悟道","厌倦了修仙界的争斗，归隐山林专心悟道。","cultivate",100,200,6,{},{cultivationExp:20000,intelligence:2});
+
+// ===== [150岁以上 传说期] =====
+Evt("e058","炼虚合道","突破炼虚境界，开始触摸天地法则的奥秘。","cultivate",150,500,8,{},{cultivationExp:80000,lifespan:500,reputation:300});
+Evt("e059","渡劫飞升","天劫降临，九天神雷轰然而下，渡劫成功便可飞升仙界。","tribulation",200,800,10,{},{cultivationExp:100000,danger:true});
+Evt("e060","仙界来使","仙界使者降临，带来上界的消息与考验。","social",200,600,5,{minRep:100},{reputation:200,cultivationExp:30000});
+Evt("e061","传世功法","将毕生所学融会贯通，创出独属于自己的无上道法。","cultivate",180,500,6,{minIntelligence:5},{cultivationExp:50000,title:"创道者",reputation:250});
+Evt("e062","天地大劫","天地大劫降临，你挺身而出拯救苍生，功德无量。","disaster",200,600,4,{minRep:80},{reputation:500,danger:true,cultivationExp:50000});
+Evt("e063","大乘圆满","达到大乘境界，离飞升仙界只差最后一步。","cultivate",300,800,7,{},{cultivationExp:150000,lifespan:1000});
+Evt("e064","寿终坐化","千年寿元耗尽，在一处仙山洞府中安详坐化，化为天地灵气。","lifespan",500,2000,8,{},{cultivationExp:0});
+
+// ===== 天赋专属事件 =====
+Evt("t001","天命所归","命运之力涌动，你感受到天道对你的眷顾，前方必有惊世机缘。","adventure",15,200,3,{hasTalent:"天命之子"},{cultivationExp:8000,luck:2,breakthroughBonus:0.05});
+Evt("t002","天地共鸣","与天地大道产生共鸣，方圆百里的灵气如潮水般涌入体内。","cultivate",20,300,3,{hasTalent:"天地共鸣"},{cultivationExp:15000,breakthroughBonus:0.06});
+Evt("t003","剑心觉醒","在剑道上的感悟达到新的高度，剑意凝聚化为实质。","cultivate",18,200,4,{hasTalent:"剑道通神"},{combatPower:0.2,cultivationExp:5000,title:"剑道大师"});
+Evt("t004","丹道天启","炼丹时突然福至心灵，炼出一炉绝世丹药，震惊四方。","craft",20,200,4,{hasTalent:"炼丹奇才"},{pill:"九转金丹",reputation:80});
+Evt("t005","涅槃重生","遭遇致命危机时，体内凤凰血脉觉醒，涅盘重生战力大增。","disaster",25,300,3,{hasTalent:"凤凰涅槃"},{revive:1,cultivationExp:10000,combatPower:0.3});
+Evt("t006","万象领悟","在修炼中突然领悟万象归宗的真谛，各种功法融会贯通。","cultivate",30,300,3,{hasTalent:"万象归宗"},{cultivationExp:20000,intelligence:2});
+Evt("t007","厄运转机","虽然运气极差，但危机中往往蕴含着最大的机遇。","disaster",15,200,4,{hasTalent:"厄运缠身"},{danger:true,cultivationExp:3000,luck:1});
+Evt("t008","魔道试炼","魔道圣体在月圆之夜爆发，你必须压制魔性否则后果不堪设想。","disaster",20,200,4,{hasTalent:"魔道圣体"},{danger:true,combatPower:0.15,cultivationExp:4000});
+Evt("t009","丹道宗师","你的丹道造诣已臻化境，所炼之丹可起死回生。","craft",40,300,3,{hasTalent:"丹道宗师"},{reputation:150,title:"丹圣",pill:"太清玉液"});
+Evt("t010","财源滚滚","财运亨通，一笔意想不到的巨大财富从天而降。","market",20,300,4,{hasTalent:"财神眷顾"},{spiritStones:10000,reputation:30});
+
+// ===== 灵根专属事件 =====
+Evt("r001","金灵淬体","金系灵气在体内凝聚成剑，以剑意淬炼肉身。","cultivate",15,200,5,{hasElement:"金"},{combatPower:0.1,constitution:1,cultivationExp:2000});
+Evt("r002","木灵滋养","木系灵气在经脉中流转，如春风化雨般修复体内暗伤。","cultivate",15,200,5,{hasElement:"木"},{healRate:0.1,constitution:1,cultivationExp:1500});
+Evt("r003","水灵悟道","静坐瀑布之下，以水之势参悟天地大道。","cultivate",15,200,5,{hasElement:"水"},{intelligence:1,cultivationExp:2000});
+Evt("r004","火灵炼器","引地心之火淬炼法器，火灵根让炼器事半功倍。","craft",18,200,5,{hasElement:"火"},{artifact:"赤焰枪",reputation:20});
+Evt("r005","土灵筑府","以土系灵力在山腹中开辟洞府，防御固若金汤。","cultivate",20,200,5,{hasElement:"土"},{defenseBonus:0.1,constitution:1});
+Evt("r006","雷灵淬体","引天雷入体，以雷灵根化解并吸收雷电之力淬炼肉身。","cultivate",18,200,5,{hasElement:"雷"},{constitution:2,combatPower:0.1,danger:true});
+Evt("r007","风灵御空","风灵根让你对风的感悟远超常人，创出御风飞行之术。","adventure",16,200,5,{hasElement:"风"},{speedBonus:0.1,cultivationExp:1000});
+Evt("r008","冰灵封天","在极寒之地修炼，冰灵根让你如鱼得水修为大增。","cultivate",18,200,5,{hasElement:"冰"},{cultivationExp:3000,constitution:1});
+
+// ===== 属性阈值事件 =====
+Evt("s001","家世显赫","出身不凡，家族为你提供了丰厚的修炼资源。","social",1,16,8,{minFamily:4},{spiritStones:500,cultivationExp:200});
+Evt("s002","天资聪颖","过人的智慧让你在学习功法和道法时事半功倍。","cultivate",10,100,6,{minIntelligence:5},{cultivationExp:3000,intelligence:1});
+Evt("s003","体魄强健","天生体魄远超常人，修炼肉身功法事半功倍。","cultivate",8,100,6,{minConstitution:5},{constitution:1,combatPower:0.1});
+Evt("s004","气运加身","运气极佳，无论做任何事都如有神助。","adventure",10,200,5,{minLuck:5},{luck:1,cultivationExp:2000});
+Evt("s005","家道中落","家族突遭变故，修炼资源骤然减少。","disaster",10,30,7,{maxFamily:2},{spiritStones:-100,danger:true});
+Evt("s006","愚钝不堪","天资较差，学习功法困难重重。","cultivate",8,20,6,{maxIntelligence:2},{cultivationExp:-200});
+Evt("s007","体弱多病","体质虚弱，常年与药为伴。","disaster",5,20,7,{maxConstitution:2},{constitution:-1});
+Evt("s008","霉运连连","运气之差令人叹息，做什么都不顺利。","disaster",10,200,6,{maxLuck:2},{spiritStones:-50,danger:true});
+
+// ===== 特殊隐藏事件 =====
+Evt("h001","上古传承","在一处秘境中触发了上古大能留下的传承试炼，通过后获得惊天传承。","adventure",40,300,2,{minLuck:4,minIntelligence:3},{technique:"混沌无极功",cultivationExp:80000});
+Evt("h002","时空奇遇","被卷入时空乱流，在远古时代修行千年后重返现世。","adventure",50,400,1,{minLuck:5},{cultivationExp:200000,lifespan:-50});
+Evt("h003","仙界试炼","仙界开启试炼之门，你有幸成为试炼者之一。","adventure",100,500,1,{minRep:100},{cultivationExp:100000,breakthroughBonus:0.1,danger:true});
+Evt("h004","大道共鸣","与天地大道产生最深层次的共鸣，窥见宇宙真理的一角。","cultivate",200,1000,1,{minIntelligence:6},{cultivationExp:300000,intelligence:3,title:"悟道者"});
+
+// ===== 宗门系统事件 =====
+// 正道宗门
+Evt("s01","青云入门","通过层层考核正式拜入正道大宗青云宗，从此以斩妖除魔为己任。","sect",13,20,10,{},{sect:"青云宗",sectAlign:"righteous",cultivationExp:400,reputation:20});
+Evt("s02","无极问道","加入以道法闻名天下的无极门，钻研天地大道。","sect",13,20,8,{minIntelligence:2},{sect:"无极门",sectAlign:"righteous",cultivationExp:500,intelligence:1});
+Evt("s03","万剑归宗","拜入以剑道称雄的万剑阁，从此与剑为伴。","sect",14,22,7,{hasElement:"金"},{sect:"万剑阁",sectAlign:"righteous",combatPower:0.15,cultivationExp:400});
+Evt("s04","正道除魔","随宗门师兄下山除魔，斩杀作恶妖修，维护一方安宁。","combat",20,100,9,{sectAlign:"righteous"},{combat:true,difficulty:"medium",reputation:30});
+Evt("s05","正道盟会","参加正道联盟大会，与各派英杰交流切磋。","social",25,200,8,{sectAlign:"righteous"},{reputation:40,cultivationExp:2000});
+Evt("s06","护山大阵","宗门遭遇魔修围攻，你主持护山大阵力保不失。","combat",30,150,7,{sectAlign:"righteous"},{combat:true,difficulty:"hard",reputation:80,title:"护法真人"});
+
+// 邪修宗门
+Evt("s07","魔宗招揽","被魔道宗门看中你的潜力，邀请你加入。从此走上一条不同的道路。","sect",15,25,5,{hasTalent:"魔道圣体"},{sect:"天魔宗",sectAlign:"evil",cultivationExp:600,reputation:-20});
+Evt("s08","血煞入门","拜入以杀戮闻名的血煞宗，以血炼之道提升修为。","sect",14,25,4,{hasTalent:"血魔之体"},{sect:"血煞宗",sectAlign:"evil",combatPower:0.2,cultivationExp:500,danger:true});
+Evt("s09","鬼道传承","被鬼道宗门幽冥殿看中，传授鬼道秘法。","sect",16,30,4,{hasTalent:"幽冥之体"},{sect:"幽冥殿",sectAlign:"evil",cultivationExp:700,reputation:-30});
+Evt("s10","魔道试剑","在魔宗内部的残酷试炼中击败同门，证明自己的实力。","combat",20,80,6,{sectAlign:"evil"},{combat:true,difficulty:"hard",reputation:20,danger:true});
+Evt("s11","正魔冲突","正道宗门来袭，你随魔宗出战。战斗中有所感悟。","combat",25,120,7,{sectAlign:"evil"},{combat:true,difficulty:"hard",cultivationExp:1000,danger:true});
+Evt("s12","魔功反噬","修炼魔功时遭遇反噬，险些走火入魔。","disaster",20,150,6,{sectAlign:"evil"},{danger:true,cultivationExp:-2000,constitution:-1});
+Evt("s13","魔道大成","在魔道之路上达到新的高度，同门皆敬畏三分。","cultivate",40,200,5,{sectAlign:"evil"},{cultivationExp:15000,combatPower:0.15,title:"魔道高手"});
+
+// 散修路线
+Evt("s14","自由之道","不愿受宗门束缚，独自踏上修仙之路。天地虽大，我自逍遥。","social",14,30,8,{},{title:"散修",cultivationExp:200,luck:1});
+Evt("s15","散修集市","在散修聚集的坊市中交换修炼资源，结识各路奇人。","market",16,100,9,{sectAlign:"neutral"},{spiritStones:200,reputation:5});
+Evt("s16","隐士高人","在山野间偶遇一位隐世散修，对方传授了一套独门功法。","adventure",20,150,6,{sectAlign:"neutral"},{technique:"太虚心经",cultivationExp:3000});
+Evt("s17","散修联盟","众多散修联合成立联盟，你被推举为首领之一。","social",30,200,5,{sectAlign:"neutral",minRep:30},{reputation:50,title:"散修盟主"});
+Evt("s18","独行天下","不依赖任何势力，以个人之力闯荡修仙界。","adventure",25,200,7,{sectAlign:"neutral"},{cultivationExp:1000,luck:1});
+
+// 宗门相关通用事件
+Evt("s19","宗门晋升","在宗门中多年苦修终获认可，晋升为内门核心弟子。","sect",22,60,8,{},{sectRank:"内门",reputation:25,cultivationExp:1000});
+Evt("s20","宗门任务","接受宗门发布的悬赏任务，成功猎杀目标获得丰厚奖励。","combat",20,80,10,{},{combat:true,difficulty:"medium",spiritStones:300,reputation:15});
+Evt("s21","师门恩情","师尊为你挡下致命一击而身受重伤，你发誓要变强保护师门。","master",18,100,4,{},{cultivationExp:3000,reputation:10});
+Evt("s22","叛出师门","与宗门发生不可调和的矛盾，毅然叛出师门另寻出路。","sect",25,150,3,{},{danger:true,reputation:-50,cultivationExp:2000});
+
+// ===== 多样化结局事件 =====
+Evt("end01","羽化飞升","历经千难万险终于功德圆满，九天之门为你敞开。","ending",100,999,3,{minCultivation:50000000},{ending:"飞升真仙"});
+Evt("end02","隐居终老","厌倦了修仙界的尔虞我诈，归隐山林过完余生。","ending",200,999,4,{maxCultivation:5000000},{ending:"归隐者"});
+Evt("end03","一方霸主","成为一方修仙势力的绝对主宰，令行禁止。","ending",150,999,5,{minRep:200,hasSect:true},{ending:"一方霸主"});
+Evt("end04","传道天下","将毕生所学整理成册传于后世，功德无量。","ending",180,999,4,{minIntelligence:4,minRep:100},{ending:"万世师表"});
+Evt("end05","魔道至尊","在魔道之路上走到极致，成为令天下闻风丧胆的魔道至尊。","ending",150,999,4,{sectAlign:"evil",minRep:100},{ending:"魔道至尊"});
+Evt("end06","散仙逍遥","虽未飞升仙界，却以散仙之身逍遥天地间。","ending",200,999,5,{sectAlign:"neutral",minCultivation:10000000},{ending:"逍遥散仙"});
+Evt("end07","功德圆满","一生积德行善，最终功德圆满被接引至净土。","ending",180,999,4,{sectAlign:"righteous",minRep:150},{ending:"功德圣者"});
+Evt("end08","剑道至尊","剑道大成，一剑可破万法，成为万剑之尊。","ending",120,999,5,{hasTalent:"剑道通神",minCultivation:30000000},{ending:"剑道至尊"});
+Evt("end09","丹道圣手","丹道已达化境，可炼出起死回生的绝世仙丹。","ending",100,999,5,{hasTalent:"丹道宗师",minRep:150},{ending:"丹道圣手"});
+Evt("end10","传奇不朽","你的事迹被编成传说在修仙界代代流传。","ending",100,999,3,{minRep:100,minCultivation:20000000},{ending:"不朽传奇"});
+Evt("end11","先天早夭","天生体质过于虚弱，未能长大成人便早早离世。","ending",1,15,8,{maxConstitution:1},{ending:"先天早夭"});
+
+class Character{constructor(){this.name="";this.age=CONFIG.INITIAL_AGE;this.lifespan=CONFIG.INITIAL_LIFESPAN;this.maxLifespan=CONFIG.INITIAL_LIFESPAN;this.spiritStones=CONFIG.INITIAL_SPIRIT_STONES;this.spiritRoot=null;this.realmIndex=0;this.cultivationExp=0;this.talents=[];this.stats={family:1,intelligence:1,constitution:1,luck:1};this.inventory={artifacts:[],pills:[],techniques:[],specials:[]};this.titles=[];this.eventFlags={};this.timeline=[];this.alive=true;this.deathReason="";this.reputation=0;this.sect=null;this.sectRank="散修";this.sectAlign="neutral";this.companions=[];this.combatPower=0;this.effectiveCultivationRate=0}init(){this.name=DATA.DAO_NAMES.generate();this.spiritRoot=DATA.SPIRIT_ROOTS.generate();this.realmIndex=0;this.cultivationExp=0;this.age=CONFIG.INITIAL_AGE;this.lifespan=CONFIG.INITIAL_LIFESPAN;this.maxLifespan=this.lifespan;this.spiritStones=CONFIG.INITIAL_SPIRIT_STONES;this.alive=true;this.deathReason="";this.timeline=[];this.eventFlags={};this.inventory={artifacts:[],pills:[],techniques:[],specials:[]};this.titles=[];this.reputation=0;this.sect=null;this.sectRank="散修";this.sectAlign="neutral";this.companions=[]}allocateStat(stat,delta){if(this.stats[stat]+delta<CONFIG.MIN_STAT||this.stats[stat]+delta>CONFIG.MAX_STAT)return false;const used=Object.values(this.stats).reduce((a,b)=>a+b,0);if(delta>0&&used>=CONFIG.TOTAL_STAT_POINTS)return false;this.stats[stat]+=delta;return true}getRemainingPoints(){return CONFIG.TOTAL_STAT_POINTS-Object.values(this.stats).reduce((a,b)=>a+b,0)}calcCultivationRate(){let rate=CONFIG.BASE_CULTIVATION_RATE;rate*=this.spiritRoot.speed;rate*=(1+this.stats.intelligence*0.05);for(const t of this.talents){if(t.effects.cultivationRate)rate*=(1+t.effects.cultivationRate)}for(const tech of this.inventory.techniques){if(tech.effects&&tech.effects.cultivationRate)rate*=(1+tech.effects.cultivationRate)}const lt=this.talents.find(t=>t.id==="t004");if(lt&&this.age>50)rate*=(1+(this.age-50)*0.01);this.effectiveCultivationRate=rate;return rate}calcBreakthroughBonus(){let bonus=this.spiritRoot.breakthroughBonus;bonus+=this.stats.intelligence*0.01+this.stats.luck*0.005;for(const t of this.talents){if(t.effects.breakthroughBonus)bonus+=t.effects.breakthroughBonus}for(const tech of this.inventory.techniques){if(tech.effects&&tech.effects.breakthroughBonus)bonus+=tech.effects.breakthroughBonus}return bonus}calcCombatPower(){let power=10+this.realmIndex*20+this.cultivationExp/1000+this.stats.constitution*5;for(const t of this.talents){if(t.effects.combatPower)power*=(1+t.effects.combatPower)}for(const art of this.inventory.artifacts){if(art.effects&&art.effects.combatPower)power+=art.effects.combatPower}for(const tech of this.inventory.techniques){if(tech.effects&&tech.effects.combatPower)power+=tech.effects.combatPower}return Math.floor(power)}attemptBreakthrough(){if(this.realmIndex>=DATA.REALMS.length-1)return{success:false,msg:"已达最高境界"};const nextRealm=DATA.REALMS[this.realmIndex+1];let chance=nextRealm.breakthroughChance+this.calcBreakthroughBonus();chance=Utils.clamp(chance,0.01,0.99);if(Utils.chance(chance)){this.realmIndex++;this.lifespan+=nextRealm.lifespanBonus;this.maxLifespan+=nextRealm.lifespanBonus;this.timeline.push({age:this.age,event:"突破至"+nextRealm.name,type:"breakthrough"});return{success:true,realm:nextRealm,msg:"突破至"+nextRealm.name+"！寿元+"+nextRealm.lifespanBonus}}else{const failMsg=nextRealm.failPenalty||"突破失败";if(failMsg.includes("倒退")){const match=failMsg.match(/(\d+)/);if(match){this.realmIndex=Math.max(0,this.realmIndex-parseInt(match[1]));this.cultivationExp=Math.floor(this.cultivationExp*0.5)}}else if(failMsg.includes("退回")){for(let i=this.realmIndex;i>=0;i--){if(failMsg.includes(DATA.REALMS[i].name)){this.realmIndex=i;this.cultivationExp=Math.floor(DATA.REALMS[i].expRequired*0.7);break}}}else if(failMsg.includes("殒命")){this.alive=false;this.deathReason=Utils.pick(["突破失败，雷劫殒命。","天劫之下灰飞烟灭。","心魔反噬，魂飞魄散。","强行突破，经脉尽断而亡。"])}return{success:false,msg:failMsg}}}advanceAge(){this.age++;this.lifespan--;if(this.lifespan<=0){this.alive=false;this.deathReason=Utils.pick(["寿元耗尽，驾鹤西去。","油尽灯枯，安详离世。","大限已至，寿终正寝。","岁月无情，生命之火缓缓熄灭。"])}}getRealm(){return DATA.REALMS[this.realmIndex]}getRealmProgress(){if(this.realmIndex>=DATA.REALMS.length-1)return 100;const cur=DATA.REALMS[this.realmIndex].expRequired;const nxt=DATA.REALMS[this.realmIndex+1].expRequired;return Math.min(100,Math.floor(((this.cultivationExp-cur)/(nxt-cur))*100))}applyTalentEffects(){for(const t of this.talents){const e=t.effects;if(e.family)this.stats.family=Utils.clamp(this.stats.family+e.family,CONFIG.MIN_STAT,CONFIG.MAX_STAT);if(e.intelligence)this.stats.intelligence=Utils.clamp(this.stats.intelligence+e.intelligence,CONFIG.MIN_STAT,CONFIG.MAX_STAT);if(e.constitution)this.stats.constitution=Utils.clamp(this.stats.constitution+e.constitution,CONFIG.MIN_STAT,CONFIG.MAX_STAT);if(e.luck)this.stats.luck=Utils.clamp(this.stats.luck+e.luck,CONFIG.MIN_STAT,CONFIG.MAX_STAT);if(e.lifespanBonus){this.lifespan+=e.lifespanBonus;this.maxLifespan+=e.lifespanBonus}}}}
+
+const CombatEngine={simulate(char,difficulty){const power=char.calcCombatPower();const diffMult={low:0.5,medium:0.9,hard:1.3,deadly:2.0};const mult=diffMult[difficulty]||1.0;const enemyPower=Math.floor(power*mult*Utils.randInt(80,120)/100);let playerHp=100,enemyHp=100;const log=[];const enemyNames={low:"低阶妖兽",medium:"同阶修士",hard:"高阶魔修",deadly:"天外魔头"};log.push("对手: "+(enemyNames[difficulty]||"敌人")+" (战力:"+enemyPower+")");const powerRatio=power/Math.max(1,enemyPower);for(let turn=1;turn<=15;turn++){enemyHp-=Utils.randInt(5,15)+Math.floor(powerRatio*10);if(enemyHp<=0){log.push("胜利！");return{victory:true,log:log.join(' | ')}}playerHp-=Utils.randInt(3,12)+Math.floor((1/powerRatio)*8);if(playerHp<=0){if(difficulty==="deadly"&&Utils.chance(CONFIG.COMBAT_DEATH_BASE*3))return{victory:false,log:log.join(' | '),death:true};const dr=char.talents.reduce((s,t)=>s+(t.effects.deathResist||0),0);const rt=char.talents.find(t=>t.effects.revive&&t.effects.revive>0);if(rt){rt.effects.revive--;log.push("凤凰涅槃！重生！");playerHp=50;continue}if(Utils.chance(dr)){log.push("侥幸逃过一劫！");return{victory:false,log:log.join(' | '),death:false,injured:true}}return{victory:false,log:log.join(' | '),death:true}}}return{victory:playerHp>enemyHp,log:log.join(' | '),death:false}}};
+
+const LifeSimulator={char:null,timer:null,speed:CONFIG.SIM_SPEED,isRunning:false,isPaused:false,start(char){this.char=char;this.isRunning=true;this.isPaused=false;this.speed=CONFIG.SIM_SPEED;UIManager.renderGameScreen(char);UIManager.showScreen('gameScreen');UIManager.addLogEntry(char.age,"=== "+char.name+"的修仙人生，就此展开 ===",'great');UIManager.showControls(true);this.scheduleNext()},scheduleNext(){if(!this.isRunning)return;this.timer=setTimeout(()=>this.processYear(),this.speed)},processYear(){try{if(!this.isRunning||!this.char.alive)return;this.char.advanceAge();if(!this.char.alive){this.endSimulation();return}const rate=this.char.calcCultivationRate();this.char.cultivationExp+=Math.floor(rate*(0.5+Utils.rand()*0.5));let et=null;if(Utils.chance(CONFIG.EVENT_CHANCE_PER_YEAR)){et=this.triggerRandomEvent();if(!this.char.alive||!this.isRunning){this.endSimulation();return}}if(this.char.realmIndex<DATA.REALMS.length-1){const nr=DATA.REALMS[this.char.realmIndex+1];if(this.char.cultivationExp>=nr.expRequired){const bt=this.char.attemptBreakthrough();if(bt.success){UIManager.addLogEntry(this.char.age,bt.msg,'breakthrough');UIManager.showBreakthroughEffect(bt.realm.name)}else if(bt.msg)UIManager.addLogEntry(this.char.age,bt.msg,'danger');if(!this.char.alive){this.endSimulation();return}}}if(this.char.realmIndex>=19){this.char.alive=false;this.char.deathReason=Utils.pick(["功德圆满，飞升仙界！","白日飞升，位列仙班！","羽化登仙，天地同寿！","九天神雷洗礼，飞升上界！","天道认可，霞举飞升！"]);this.endSimulation();return}if(!et)UIManager.addLogEntry(this.char.age,this.generateDaily(),'normal');
+  const lifeRatio=this.char.age/Math.max(1,this.char.maxLifespan);
+    let endChance=0;
+    if(lifeRatio<0.15)endChance=0.003;
+    else if(lifeRatio<0.4)endChance=0.008;
+    else if(lifeRatio<0.6)endChance=0.02;
+    else if(lifeRatio<0.8)endChance=0.05;
+    else if(lifeRatio<0.95)endChance=0.10;
+    else endChance=0.20;
+    if(this.char.age<10&&this.char.stats.constitution<=1&&Utils.chance(0.15)){
+      this.char.alive=false;this.char.deathReason="先天体弱，不幸早夭。";this.endSimulation();return
+    }
+    if(Utils.chance(endChance)){
+    const endPool=DATA.EVENT_POOL.filter(e=>e.category==='ending'&&this.char.age>=e.minAge);
+    if(endPool.length>0){
+      const endEvt=Utils.pick(endPool);
+      let ok=true;const rq=endEvt.requirements||{};
+      if(rq.minCultivation&&this.char.cultivationExp<rq.minCultivation)ok=false;
+      if(rq.maxCultivation&&this.char.cultivationExp>rq.maxCultivation)ok=false;
+      if(rq.minRep&&this.char.reputation<rq.minRep)ok=false;
+      if(rq.sectAlign&&this.char.sectAlign!==rq.sectAlign)ok=false;
+      if(rq.hasTalent&&!this.char.talents.some(t=>t.name===rq.hasTalent))ok=false;
+      if(rq.hasSect&&!this.char.sect)ok=false;
+      if(ok){this.char.alive=false;this.char.deathReason=endEvt.description+"——"+endEvt.results.ending;this.endSimulation();return}
+    }
+  }
+    if(this.char.realmIndex>=16&&this.char.age>200&&Utils.chance(0.02)){
+      this.char.alive=false;this.char.deathReason=Utils.pick(["道心圆满，坐化飞升。","参透天地至理，化道而去。","千年修行终得正果，羽化登仙。"]);
+      this.endSimulation();return
+    }
+    UIManager.updateGamePanel(this.char)}catch(e){console.error(e)}if(this.char.age%20===0){this.isPaused=true;UIManager.showPausePrompt(this.char.age)}else{this.scheduleNext()}},triggerRandomEvent(){
+    this.recentEvents=this.recentEvents||[];
+    let pool=DATA.EVENT_POOL.filter(e=>{
+      if(this.char.age<e.minAge||this.char.age>e.maxAge)return false;
+      if(this.recentEvents.includes(e.id))return false;
+      let req=e.requirements||{};
+      if(req.minIntelligence&&this.char.stats.intelligence<req.minIntelligence)return false;
+      if(req.maxIntelligence&&this.char.stats.intelligence>req.maxIntelligence)return false;
+      if(req.minConstitution&&this.char.stats.constitution<req.minConstitution)return false;
+      if(req.maxConstitution&&this.char.stats.constitution>req.maxConstitution)return false;
+      if(req.minFamily&&this.char.stats.family<req.minFamily)return false;
+      if(req.maxFamily&&this.char.stats.family>req.maxFamily)return false;
+      if(req.minLuck&&this.char.stats.luck<req.minLuck)return false;
+      if(req.maxLuck&&this.char.stats.luck>req.maxLuck)return false;
+      if(req.minRep&&this.char.reputation<req.minRep)return false;
+      if(req.hasTalent&&!this.char.talents.some(t=>t.name===req.hasTalent))return false;
+      if(req.hasElement&&!this.char.spiritRoot.elements.includes(req.hasElement))return false;
+      if(req.sectAlign&&this.char.sectAlign!==req.sectAlign)return false;
+      if(req.hasSect&&!this.char.sect)return false;
+      if(req.minCultivation&&this.char.cultivationExp<req.minCultivation)return false;
+      if(req.maxCultivation&&this.char.cultivationExp>req.maxCultivation)return false;
+      return true;
+    });
+    if(pool.length===0){pool=DATA.EVENT_POOL.filter(e=>this.char.age>=e.minAge&&this.char.age<=e.maxAge);this.recentEvents=[]}
+    let p=DATA.EVENT_POOL.filter(e=>{
+      if(this.char.age<e.minAge)return false;
+      if(this.recentEvents.includes(e.description))return false;
+      if(e.category==='adventure'){
+        const bonus=this.char.talents.reduce((s,t)=>s+(t.effects.adventureRate||0),0);
+        if(bonus<0&&Utils.chance(Math.abs(bonus)))return false;
+      }
+      if(e.category==='disaster'){
+        const dangerBonus=this.char.talents.reduce((s,t)=>s+(t.effects.dangerEvents||0),0);
+        if(dangerBonus>0&&!Utils.chance(dangerBonus))return false;
+        const avoidBonus=this.char.talents.reduce((s,t)=>s+(t.effects.dangerEvents||0),0);
+        if(avoidBonus<0&&Utils.chance(Math.abs(avoidBonus)))return false;
+      }
+      return true;
+    });if(p.length===0){p=DATA.EVENT_POOL.filter(e=>this.char.age>=e.minAge);this.recentEvents=[]}const totalW=pool.reduce((s,e)=>s+(e.weight||10),0);let r=Utils.rand()*totalW;let evt=pool[0];for(const e of pool){r-=e.weight||10;if(r<=0){evt=e;break}}this.recentEvents.push(evt.id);if(this.recentEvents.length>12)this.recentEvents.shift();if(evt.category==='combat'&&evt.results.combat){
+      const combatBonus=this.char.talents.reduce((s,t)=>s+(t.effects.combatPower||0),0);
+      const diff=combatBonus>1?'hard':combatBonus>0.5?'medium':'low';
+      const actualDiff=evt.results.difficulty||diff;
+      const r=CombatEngine.simulate(this.char,evt.results.difficulty||'medium');if(r.death){this.char.alive=false;this.char.deathReason=Utils.pick(["力战而竭，陨落于敌手。","不敌对手，含恨而终。","重伤不治，魂归天地。","被强敌斩杀，修仙路尽。","寡不敌众，战死沙场。"]);UIManager.addLogEntry(this.char.age,evt.description+"——战败身亡！",'danger');this.endSimulation();return evt}UIManager.addLogEntry(this.char.age,evt.description+"（"+r.log+"）",r.victory?'good':'danger');if(r.injured)this.char.stats.constitution=Math.max(1,this.char.stats.constitution-1);this.char.timeline.push({age:this.char.age,event:evt.description,type:evt.category});return evt}return this.applyEventResults(evt)},applyEventResults(evt){const r=evt.results;if(r.spiritStones)this.char.spiritStones+=r.spiritStones;if(r.cultivationExp)this.char.cultivationExp+=r.cultivationExp;if(r.constitution)this.char.stats.constitution=Utils.clamp(this.char.stats.constitution+r.constitution,1,20);if(r.intelligence)this.char.stats.intelligence=Utils.clamp(this.char.stats.intelligence+r.intelligence,1,20);if(r.luck)this.char.stats.luck=Utils.clamp(this.char.stats.luck+r.luck,1,20);if(r.lifespan){this.char.lifespan+=r.lifespan;this.char.maxLifespan+=r.lifespan}if(r.eventFlag)this.char.eventFlags[r.eventFlag]=true;if(r.artifact)this.char.inventory.artifacts.push({name:r.artifact});if(r.pill)this.char.inventory.pills.push({name:r.pill});if(r.technique)this.char.inventory.techniques.push({name:r.technique});if(r.sect){this.char.sect=r.sect;this.char.sectRank="外门";if(r.sectAlign)this.char.sectAlign=r.sectAlign}if(r.sectRank)this.char.sectRank=r.sectRank;if(r.title&&!this.char.titles.includes(r.title))this.char.titles.push(r.title);if(r.reputation)this.char.reputation+=r.reputation;if(r.companion)this.char.companions.push("道友");
+    if(r.revive){const rt=this.char.talents.find(t=>t.effects.revive);if(rt)rt.effects.revive=(rt.effects.revive||0)+1}
+    if(r.speedBonus)this.char.stats.luck=Utils.clamp(this.char.stats.luck+1,1,20);
+    if(r.combatExp)this.char.cultivationExp+=(r.combatExp||0);
+    if(r.healRate)this.char.stats.constitution=Utils.clamp(this.char.stats.constitution+1,1,20);
+    if(r.defenseBonus)this.char.stats.constitution=Utils.clamp(this.char.stats.constitution+1,1,20);if(r.danger&&Utils.chance(0.2))this.char.stats.constitution=Math.max(1,this.char.stats.constitution-1);this.char.timeline.push({age:this.char.age,event:evt.description,type:evt.category});const cc={adventure:'good',cultivate:'normal',combat:'great',social:'rare',disaster:'danger',sect:'great',craft:'good',market:'good',lifespan:'danger'}[evt.category]||'normal';UIManager.addLogEntry(this.char.age,evt.description,cc);return evt},generateDaily(){if(Utils.chance(0.5))return"潜心修炼，修为稳步增长。";return Utils.pick(["研习功法，略有心得。","打坐练气，感悟天地。","闭关修炼，一心向道。","游历四方，增长见闻。","与道友论道，获益匪浅。","在修炼中度过平静的一年。","感悟到了一丝天道真意。","道基愈发稳固。"])},resume(){this.isPaused=false;UIManager.hidePausePrompt();this.scheduleNext()},fastForward(){this.speed=CONFIG.SIM_FAST_SPEED;if(this.isPaused)this.resume()},normalSpeed(){this.speed=CONFIG.SIM_SPEED},endSimulation(){this.isRunning=false;if(this.timer)clearTimeout(this.timer);UIManager.showControls(false);UIManager.renderEnding(this.char)},stop(){this.isRunning=false;if(this.timer)clearTimeout(this.timer)}};
+
+const UIManager={renderCreateScreen(char,talents){document.getElementById('basicInfo').innerHTML='<h3>天命信息</h3><div class="info-row"><span class="info-label">道号：</span><span class="info-value gold">'+char.name+'</span><button class="btn-reroll" onclick="Game.rerollName()">重选道号</button></div><div class="info-row"><span class="info-label">灵根：</span><span class="info-value rare">'+char.spiritRoot.name+'（'+char.spiritRoot.elements.join('·')+'）</span><button class="btn-reroll" onclick="Game.rerollRoot()">重选灵根</button></div><div class="info-row"><span class="info-label">初始寿元：</span><span class="info-value">'+char.lifespan+'</span></div><div class="info-row"><span class="info-label">初始灵石：</span><span class="info-value gold">'+char.spiritStones+'</span></div>';const stats=['family','intelligence','constitution','luck'];const sn={family:'家境',intelligence:'智力',constitution:'体质',luck:'运气'};let sh='<h3>属性分配（剩余点数：<span id="remainPoints" class="points-remain">'+char.getRemainingPoints()+'</span>）</h3>';for(const s of stats){sh+='<div class="stat-row"><span class="stat-name">'+sn[s]+'</span><div class="stat-bar-container"><div class="stat-bar-fill" id="bar_'+s+'" style="width:'+(char.stats[s]/CONFIG.MAX_STAT*100)+'%"></div></div><div class="stat-ctrl"><button class="stat-btn" onclick="Game.adjustStat(\''+s+'\',-1)">-</button><span class="stat-value" id="val_'+s+'">'+char.stats[s]+'</span><button class="stat-btn" onclick="Game.adjustStat(\''+s+'\',1)">+</button></div></div>'}document.getElementById('statsSection').innerHTML=sh;let th='<h3>选择天赋（3/10）</h3><div class="talent-count">已选：<span id="talentCount">0</span>/3</div><div class="talent-grid">';for(const t of talents){th+='<div class="talent-card" id="tcard_'+t.id+'" onclick="Game.toggleTalent(\''+t.id+'\')"><div class="talent-name">'+t.name+'</div><span class="talent-grade grade-'+t.grade+'">'+t.grade.toUpperCase()+'</span><div class="talent-desc">'+t.desc+'</div></div>'}th+='</div>';document.getElementById('talentSection').innerHTML=th;document.getElementById('btnStartLife').disabled=true},updateStatDisplay(char){for(const s of['family','intelligence','constitution','luck']){document.getElementById('bar_'+s).style.width=(char.stats[s]/CONFIG.MAX_STAT*100)+'%';document.getElementById('val_'+s).textContent=char.stats[s]}document.getElementById('remainPoints').textContent=char.getRemainingPoints()},updateTalentSelection(ids){document.getElementById('talentCount').textContent=ids.length;document.getElementById('btnStartLife').disabled=ids.length!==CONFIG.TALENT_SELECT_COUNT;document.querySelectorAll('.talent-card').forEach(c=>{c.classList.toggle('selected',ids.includes(c.id.replace('tcard_','')))})},showScreen(sid){['homeScreen','createScreen','gameScreen','endingScreen'].forEach(id=>{const el=document.getElementById(id);if(el){el.classList.remove('active');if(id===sid)el.classList.add('active')}})},renderGameScreen(char){this.updateGamePanel(char);document.getElementById('eventLog').innerHTML=''},updateGamePanel(char){const realm=char.getRealm();const p=char.getRealmProgress();document.getElementById('leftPanel').innerHTML='<div class="panel-header"><div class="char-name">'+char.name+'</div><div class="char-realm">'+realm.name+' '+p+'%</div></div><div class="stat-item"><span class="s-label">年龄</span><span class="s-value">'+char.age+'岁</span></div><div class="stat-item"><span class="s-label">寿元</span><span class="s-value">'+char.lifespan+'/'+char.maxLifespan+'</span></div><div class="stat-item"><span class="s-label">灵根</span><span class="s-value">'+char.spiritRoot.name+'</span></div><div class="stat-item"><span class="s-label">灵石</span><span class="s-value gold">'+char.spiritStones+'</span></div><div class="stat-item"><span class="s-label">战力</span><span class="s-value">'+char.calcCombatPower()+'</span></div><div class="stat-item"><span class="s-label">声望</span><span class="s-value">'+char.reputation+'</span></div><div class="stat-item"><span class="s-label">宗门</span><span class="s-value">'+(char.sect||'散修')+(char.sectAlign==='evil'?' [魔]':char.sectAlign==='righteous'?' [正]':'')+'</span></div><div class="stat-item"><span class="s-label">家境</span><span class="s-value">'+char.stats.family+'</span></div><div class="stat-item"><span class="s-label">智力</span><span class="s-value">'+char.stats.intelligence+'</span></div><div class="stat-item"><span class="s-label">体质</span><span class="s-value">'+char.stats.constitution+'</span></div><div class="stat-item"><span class="s-label">运气</span><span class="s-value">'+char.stats.luck+'</span></div><div class="title-list">'+char.titles.map(t=>'<span class="title-tag">'+t+'</span>').join('')+'</div><div style="margin-top:12px;font-size:12px;color:var(--text-dim);">天赋：'+char.talents.map(t=>t.name).join('、')+'</div>';document.getElementById('ageDisplay').textContent=char.age+'岁';document.getElementById('yearDisplay').textContent='境界：'+realm.name},addLogEntry(age,text,cssClass){const log=document.getElementById('eventLog');const div=document.createElement('div');div.className='log-entry '+(cssClass||'normal');div.innerHTML='<span class="log-year">'+age+'岁</span> '+text;log.appendChild(div);setTimeout(()=>{log.scrollTop=log.scrollHeight},50)},showControls(v){document.getElementById('simControls').style.display=v?'flex':'none'},showPausePrompt(age){document.getElementById('pausePrompt').style.display='flex';document.getElementById('pauseText').textContent='—— '+age+'岁，人生已推演至此 ——'},hidePausePrompt(){document.getElementById('pausePrompt').style.display='none'},showBreakthroughEffect(rn){this.showToast("突破！进入"+rn+"！");const fx=document.getElementById('fxLayer');for(let i=0;i<30;i++){setTimeout(()=>{const s=document.createElement('div');s.className='fx-spark';s.style.left=Utils.randInt(10,90)+'%';s.style.top=Utils.randInt(10,90)+'%';fx.appendChild(s);setTimeout(()=>s.remove(),1200)},i*30)}},showToast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.getElementById('fxLayer').appendChild(t);setTimeout(()=>t.remove(),2500)},renderEnding(char){let grade;if(char.realmIndex>=19)grade="飞升真仙";else if(char.realmIndex>=17)grade="仙道至尊";else if(char.realmIndex>=14)grade="绝世天骄";else if(char.realmIndex>=11)grade="一方豪杰";else if(char.realmIndex>=5)grade="修仙有成";else if(char.realmIndex>=1)grade="初窥门径";else grade="泯然众人";const h='<div class="ending-title">'+char.name+' · 修仙录</div><div class="ending-grade">「'+grade+'」</div><div class="ending-section"><h3>基本信息</h3><p>享年：'+char.age+'岁 | 最终境界：'+char.getRealm().name+' | 灵根：'+char.spiritRoot.name+'</p><p>灵石：'+char.spiritStones+' | 声望：'+char.reputation+' | 宗门：'+(char.sect||'散修')+'</p><p>家境:'+char.stats.family+' 智力:'+char.stats.intelligence+' 体质:'+char.stats.constitution+' 运气:'+char.stats.luck+'</p></div><div class="ending-section"><h3>天赋</h3><p>'+char.talents.map(t=>t.name).join('、')+'</p></div><div class="ending-section"><h3>称号</h3><p>'+(char.titles.length?char.titles.join(' · '):'无')+'</p></div><div class="ending-section"><h3>人生大事记</h3><div class="ending-timeline">'+char.timeline.map(t=>'<div class="tl-item"><span class="tl-age">'+t.age+'岁</span>'+t.event+'</div>').join('')+'</div></div><div class="ending-section"><h3>结局</h3><p>'+(char.deathReason||"不明")+'</p></div><button class="btn-restart" onclick="Game.restart()">再入轮回</button>';document.getElementById('endingContent').innerHTML=h;UIManager.showScreen('endingScreen')}};
+
+const Game={char:null,selectedTalentIds:[],createdTalents:[],startNewGame(){LifeSimulator.stop();this.char=new Character();this.char.init();this.selectedTalentIds=[];this.createdTalents=Utils.pickN(DATA.TALENTS,CONFIG.TALENT_POOL_SIZE);UIManager.renderCreateScreen(this.char,this.createdTalents);UIManager.showScreen('createScreen')},rerollName(){this.char.name=DATA.DAO_NAMES.generate();UIManager.renderCreateScreen(this.char,this.createdTalents);this.selectedTalentIds.forEach(id=>{const c=document.getElementById('tcard_'+id);if(c)c.classList.add('selected')});UIManager.updateTalentSelection(this.selectedTalentIds)},rerollRoot(){this.char.spiritRoot=DATA.SPIRIT_ROOTS.generate();UIManager.renderCreateScreen(this.char,this.createdTalents);this.selectedTalentIds.forEach(id=>{const c=document.getElementById('tcard_'+id);if(c)c.classList.add('selected')});UIManager.updateTalentSelection(this.selectedTalentIds)},adjustStat(stat,delta){if(this.char.allocateStat(stat,delta))UIManager.updateStatDisplay(this.char)},toggleTalent(id){const idx=this.selectedTalentIds.indexOf(id);if(idx>=0)this.selectedTalentIds.splice(idx,1);else if(this.selectedTalentIds.length<CONFIG.TALENT_SELECT_COUNT)this.selectedTalentIds.push(id);UIManager.updateTalentSelection(this.selectedTalentIds)},confirmCreate(){if(this.selectedTalentIds.length!==CONFIG.TALENT_SELECT_COUNT)return;this.char.talents=this.createdTalents.filter(t=>this.selectedTalentIds.includes(t.id));this.char.applyTalentEffects();this.char.lifespan=CONFIG.INITIAL_LIFESPAN+(this.char.stats.constitution-1)*3;this.char.maxLifespan=this.char.lifespan;this.char.spiritStones=CONFIG.INITIAL_SPIRIT_STONES+(this.char.stats.family-1)*20;for(const t of this.char.talents){if(t.effects.lifespanBonus){this.char.lifespan+=t.effects.lifespanBonus;this.char.maxLifespan+=t.effects.lifespanBonus}}LifeSimulator.start(this.char)},restart(){LifeSimulator.stop();this.char=null;this.selectedTalentIds=[];this.createdTalents=[];UIManager.showScreen('homeScreen');UIManager.hidePausePrompt()}};
+
+(function(){const canvas=document.getElementById('bgCanvas');if(!canvas)return;const ctx=canvas.getContext('2d');let particles=[];function resize(){canvas.width=window.innerWidth;canvas.height=window.innerHeight}window.addEventListener('resize',resize);resize();for(let i=0;i<60;i++){particles.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,size:Math.random()*2+0.5,speedX:(Math.random()-0.5)*0.3,speedY:(Math.random()-0.5)*0.3-0.1,opacity:Math.random()*0.5+0.1})}function animate(){ctx.clearRect(0,0,canvas.width,canvas.height);for(const p of particles){p.x+=p.speedX;p.y+=p.speedY;if(p.x<0)p.x=canvas.width;if(p.x>canvas.width)p.x=0;if(p.y<0)p.y=canvas.height;if(p.y>canvas.height)p.y=0;ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,Math.PI*2);ctx.fillStyle='rgba(212,165,116,'+p.opacity+')';ctx.fill()}requestAnimationFrame(animate)}animate()})();
+</script>
+</body>
+</html>
