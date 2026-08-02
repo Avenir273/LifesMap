@@ -1,0 +1,7 @@
+{
+  "name": "lifesmap",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "mkdir -p dist && cp index.html dist/ 2>/dev/null || cp LifesMap.html dist/index.html"
+  }
+}
